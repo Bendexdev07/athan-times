@@ -1,7 +1,6 @@
-import React from "react";
 import "./App.css";
 import Button from "@mui/material/Button";
-import MainContent from "./MainContent.jsx";
+import MainContent from "./components/MainContent.jsx";
 import { Container } from "@mui/material";
 
 function App() {
@@ -15,10 +14,12 @@ function App() {
 					width: "100vw",
 				}}
 			>
-				<Container maxWidth="xl">
+				<Container maxWidth="xl" >
 					<MainContent />
 				</Container>
+
 			</div>
+      
 		</>
 	);
 }
