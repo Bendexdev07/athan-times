@@ -7,8 +7,13 @@ import Select from "@mui/material/Select";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
+import moment from "moment";  
 import axios from "axios";
+import "moment/dist/locale/ar-dz";
 import { useState, useEffect } from "react";
+
+moment.locale("ar-dz");         
+
 
 export default function MainContent() {
 const availableCities = [{
@@ -33,25 +38,42 @@ const availableCities = [{
     Isha: "19:33",
   });
   const [city, setCity] = useState({name: "سكيكدة", apiName: "Skikda"});
-
-
-
+  const[today,setToday]=useState("");
 
 
   const getTimings = async () => {
-    const response = await axios.get(
-      "https://api.aladhan.com/v1/timingsByCity?city=Skikda&country=Algeria"
+     const response = await axios.get(
+      `https://api.aladhan.com/v1/timingsByCity?city=${city.apiName}&country=Algeria`
     );
     setTimings(response.data.data.timings);
   };
   useEffect(() => {
-    getTimings();
-  }, []);
+    const getTimings = async () => {
+     const response = await axios.get(
+      `https://api.aladhan.com/v1/timingsByCity?city=${city.apiName}&country=Algeria`
+    );
+    setTimings(response.data.data.timings);
+  };
+  getTimings();
 
+  }, [city]);
+useEffect(() => {
+  const updateClock = () => {
+    const t = moment();
+    setToday(t.format('dddd, Do MMMM YYYY | hh:mm'));
+  };
+
+  updateClock();
+
+  const intervalId = setInterval(updateClock, 60_000);
+
+  return () => clearInterval(intervalId);
+}, []); 
  
   const handleChange = (event) => {
     const cityobj=availableCities.find((city)=>city.apiName===event.target.value);
     setCity(cityobj);
+    getTimings();
   };
   return (
     <>
@@ -67,7 +89,7 @@ const availableCities = [{
         <Grid item>
           <div>
             <h2 style={{ margin: 0, fontSize: "1.2rem" }}>
-              سبتمبر 9 2023 | 4.20
+             {today}
             </h2>
             <h1 style={{ margin: 0, fontSize: "2rem" }}>{city.name}</h1>
           </div>
