@@ -31,7 +31,7 @@ export default function MainContent() {
     { key:" Fajr", displayName:"الفجر "},
     { key: "Dhuhr", displayName:"الظهر " },
     { key: "Asr", displayName:" العصر" },
-    { key: "Maghrib", displayName: "الفجر " },
+    { key: "Maghrib", displayName: "المغرب" },
     { key: "Isha", displayName:" العشاء "},
   ];
 
@@ -67,8 +67,9 @@ export default function MainContent() {
   useEffect(() => {
     const updateClock = () => {
       const t = moment();
-      setToday(t.format('dddd, Do MMMM YYYY | hh:mm'));
+      setToday(t.format('dddd, Do MMMM YYYY | HH:mm'));
     };
+
 
     updateClock();
 
@@ -77,46 +78,35 @@ export default function MainContent() {
     return () => clearInterval(intervalId);
   }, []);
   const setupCountdownTimer = () => {
-    const momentnow = moment();
-    let PrayerIndex = null;
-    if (momentnow.isAfter(moment(timings["Fajr"], "hh:mm")) &&
-      momentnow.isBefore(moment(timings["Dhuhr"]))) {
-      PrayerIndex = 1;
+  const now = moment();
+  const prayerOrder = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+  let nextIndex = 0; 
 
-
+  for (let i = 0; i < prayerOrder.length; i++) {
+    const prayerTime = moment(timings[prayerOrder[i]], "HH:mm");
+    if (prayerTime.isValid() && now.isBefore(prayerTime)) {
+      nextIndex = i;
+      break;
     }
-    else if (momentnow.isAfter(moment(timings["Dhuhr"], "hh:mm")) &&
-      momentnow.isBefore(moment(timings["Asr"]))) {
-      PrayerIndex = 2;
-
-    }
-    else if (momentnow.isAfter(moment(timings["Asr"], "hh:mm")) &&
-      momentnow.isBefore(moment(timings["Maghrib"]))) {
-      PrayerIndex = 3;
-
-    }
-    else if (momentnow.isAfter(moment(timings["Maghrib"], "hh:mm")) &&
-      momentnow.isBefore(moment(timings["isha"]))) {
-      PrayerIndex = 4;
-
-    }
-    else {
-      PrayerIndex = 0;
-
-
-
-    }
-    setIndex(PrayerIndex)
-
-
-
-
-
-
-
-
   }
-  setupCountdownTimer();
+
+  setIndex(nextIndex);
+};
+
+
+
+
+
+
+
+  
+
+  useEffect(() => {
+       setupCountdownTimer();
+
+  }, [timings]);
+  console.log(nextPrayerIndex);
+
 
   const handleChange = (event) => {
     const cityobj = availableCities.find((city) => city.apiName === event.target.value);
@@ -147,7 +137,7 @@ export default function MainContent() {
         <Grid>
           <div>
             <h2 style={{ margin: 0, fontSize: "1.2rem" }}>
-              متبقي حتى صلاة {prayersArray[PrayerIndex]}
+متبقي حتى صلاة {prayersArray[nextPrayerIndex].displayName}
             </h2>
             <h1 style={{ margin: 0, fontSize: "2rem" }}>00:10:20</h1>
           </div>
