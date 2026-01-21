@@ -14,25 +14,27 @@ import { useState, useEffect } from "react";
 
 moment.locale("ar-dz");
 
-
 export default function MainContent() {
-  const availableCities = [{
-    name: "سكيكدة",
-    apiName: "Skikda"
-  }, {
-    name: "قسنطينة",
-    apiName: "costantine"
-
-  }, {
-    name: "عنابة",
-    apiName: "Annaba"
-  },];
-  const prayersArray= [ 
-    { key:" Fajr", displayName:"الفجر "},
-    { key: "Dhuhr", displayName:"الظهر " },
-    { key: "Asr", displayName:" العصر" },
+  const availableCities = [
+    {
+      name: "سكيكدة",
+      apiName: "Skikda",
+    },
+    {
+      name: "قسنطينة",
+      apiName: "costantine",
+    },
+    {
+      name: "عنابة",
+      apiName: "Annaba",
+    },
+  ];
+  const prayersArray = [
+    { key: "Fajr", displayName: "الفجر " },
+    { key: "Dhuhr", displayName: "الظهر " },
+    { key: "Asr", displayName: " العصر" },
     { key: "Maghrib", displayName: "المغرب" },
-    { key: "Isha", displayName:" العشاء "},
+    { key: "Isha", displayName: " العشاء " },
   ];
 
   //States
@@ -46,7 +48,8 @@ export default function MainContent() {
   const [city, setCity] = useState({ name: "سكيكدة", apiName: "Skikda" });
   const [today, setToday] = useState("");
   const [nextPrayerIndex, setIndex] = useState(0);
-
+  const [countdown, setCountdown] = useState("");
+  
 
   const getTimings = async () => {
     const response = await axios.get(
@@ -62,54 +65,73 @@ export default function MainContent() {
       setTimings(response.data.data.timings);
     };
     getTimings();
-
   }, [city]);
-  useEffect(() => {
-    const updateClock = () => {
-      const t = moment();
-      setToday(t.format('dddd, Do MMMM YYYY | HH:mm'));
-    };
+ useEffect(() => {
+		let interval = setInterval(() => {
+			console.log("calling timer");
+			commingPrayer();
+		}, 1000);
 
+		const t = moment();
+		setToday(t.format("MMM Do YYYY | h:mm"));
 
-    updateClock();
+		return () => {
+			clearInterval(interval);
+		};
+	}, [timings]);
+  const commingPrayer= () => {
+    const now = moment();
+    const prayerOrder = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+    let nextIndex = 0;
 
-    const intervalId = setInterval(updateClock, 60_000);
-
-    return () => clearInterval(intervalId);
-  }, []);
-  const setupCountdownTimer = () => {
-  const now = moment();
-  const prayerOrder = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
-  let nextIndex = 0; 
-
-  for (let i = 0; i < prayerOrder.length; i++) {
-    const prayerTime = moment(timings[prayerOrder[i]], "HH:mm");
-    if (prayerTime.isValid() && now.isBefore(prayerTime)) {
-      nextIndex = i;
-      break;
+    for (let i = 0; i < prayerOrder.length; i++) {
+      const prayerTime = moment(timings[prayerOrder[i]], "HH:mm");
+      if (prayerTime.isValid() && now.isBefore(prayerTime)) {
+        nextIndex = i;
+        break;
+      }
     }
-  }
 
-  setIndex(nextIndex);
-};
+    setIndex(nextIndex);
+    //starting the counter 
+    const nextprayerObj = prayersArray[nextPrayerIndex];
+    console.log("Next prayer object:", nextprayerObj);
+    const nextPrayertime=timings[nextprayerObj.key];
+    console.log("Next prayer time:", nextPrayertime); 
 
+    let remainingTime=(moment(nextPrayertime,"HH:mm")).diff(now); ;
+    console.log("Remaining time in ms:", remainingTime);
 
+    let reaminingDuration = moment.duration(remainingTime);
+    console.log("duartion iss",reaminingDuration.hours(),reaminingDuration.minutes(),reaminingDuration.seconds());
+    setCountdown(
+      `${reaminingDuration.hours()}:${reaminingDuration.minutes()}:${reaminingDuration.seconds()}`
+    );
+    //handling the special case of fajr 
+    if (nextprayerObj.key==="Fajr" ){
+      const diffrenceTOmidnight=moment("23:59","HH:mm").diff(now);
+      const diffrenceFromMidnightToFajr=moment(nextPrayertime,"HH:mm").diff(moment("00:00","HH:mm"));
+      const TotalDifference=diffrenceTOmidnight+diffrenceFromMidnightToFajr;
+      reaminingDuration = moment.duration(TotalDifference);
+      
+    }
+ 
+    
+  
 
-
-
+    
+  };
 
 
   
+  
 
-  useEffect(() => {
-       setupCountdownTimer();
-
-  }, [timings]);
-  console.log(nextPrayerIndex);
 
 
   const handleChange = (event) => {
-    const cityobj = availableCities.find((city) => city.apiName === event.target.value);
+    const cityobj = availableCities.find(
+      (city) => city.apiName === event.target.value
+    );
     setCity(cityobj);
     getTimings();
   };
@@ -124,11 +146,9 @@ export default function MainContent() {
         }}
       >
         {/* Left side (visually right in RTL): Date & Location */}
-        <Grid >
+        <Grid>
           <div>
-            <h2 style={{ margin: 0, fontSize: "1.2rem" }}>
-              {today}
-            </h2>
+            <h2 style={{ margin: 0, fontSize: "1.2rem" }}>{today}</h2>
             <h1 style={{ margin: 0, fontSize: "2rem" }}>{city.name}</h1>
           </div>
         </Grid>
@@ -137,9 +157,9 @@ export default function MainContent() {
         <Grid>
           <div>
             <h2 style={{ margin: 0, fontSize: "1.2rem" }}>
-متبقي حتى صلاة {prayersArray[nextPrayerIndex].displayName}
+              متبقي حتى صلاة {prayersArray[nextPrayerIndex].displayName}
             </h2>
-            <h1 style={{ margin: 0, fontSize: "2rem" }}>00:10:20</h1>
+            <h1 style={{ margin: 0, fontSize: "2rem" }}> {countdown}</h1>
           </div>
         </Grid>
       </Grid>
@@ -185,8 +205,9 @@ export default function MainContent() {
               },
             }}
           >
-            {availableCities.map((city) => <MenuItem value={city.apiName}>{city.name}</MenuItem>)}
-
+            {availableCities.map((city) => (
+              <MenuItem value={city.apiName}>{city.name}</MenuItem>
+            ))}
           </Select>
         </FormControl>
       </Stack>
