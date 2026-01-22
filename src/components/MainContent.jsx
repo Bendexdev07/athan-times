@@ -49,7 +49,6 @@ export default function MainContent() {
   const [today, setToday] = useState("");
   const [nextPrayerIndex, setIndex] = useState(0);
   const [countdown, setCountdown] = useState("");
-  
 
   const getTimings = async () => {
     const response = await axios.get(
@@ -66,68 +65,50 @@ export default function MainContent() {
     };
     getTimings();
   }, [city]);
- useEffect(() => {
-		let interval = setInterval(() => {
-			console.log("calling timer");
-			commingPrayer();
-		}, 1000);
+  useEffect(() => {
+    let interval = setInterval(() => {
+      console.log("calling timer");
+      commingPrayer();
+    }, 1000);
 
-		const t = moment();
-		setToday(t.format("MMM Do YYYY | h:mm"));
+    const t = moment();
+    setToday(t.format("MMM Do YYYY | h:mm"));
 
-		return () => {
-			clearInterval(interval);
-		};
-	}, [timings]);
-  const commingPrayer= () => {
-    const now = moment();
-    const prayerOrder = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
-    let nextIndex = 0;
+    return () => {
+      clearInterval(interval);
+    };
+  }, [timings]);
+const commingPrayer = () => {
+  const now = moment();
+  const prayerOrder = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+  let nextIndex = 0;
 
-    for (let i = 0; i < prayerOrder.length; i++) {
-      const prayerTime = moment(timings[prayerOrder[i]], "HH:mm");
-      if (prayerTime.isValid() && now.isBefore(prayerTime)) {
-        nextIndex = i;
-        break;
-      }
+  // Find next prayer (today or tomorrow)
+  for (let i = 0; i < prayerOrder.length; i++) {
+    const prayerTime = moment(timings[prayerOrder[i]], "HH:mm");
+    if (now.isBefore(prayerTime)) {
+      nextIndex = i;
+      break;
     }
+    // If we're past Isha, next is Fajr (tomorrow) → nextIndex stays 0
+  }
 
-    setIndex(nextIndex);
-    //starting the counter 
-    const nextprayerObj = prayersArray[nextPrayerIndex];
-    console.log("Next prayer object:", nextprayerObj);
-    const nextPrayertime=timings[nextprayerObj.key];
-    console.log("Next prayer time:", nextPrayertime); 
+  // Get next prayer time (handle tomorrow)
+  let nextPrayerMoment = moment(timings[prayerOrder[nextIndex]], "HH:mm");
+  if (now.isAfter(nextPrayerMoment)) {
+    nextPrayerMoment.add(1, 'day');
+  }
 
-    let remainingTime=(moment(nextPrayertime,"HH:mm")).diff(now); ;
-    console.log("Remaining time in ms:", remainingTime);
+  // Calculate countdown
+  const remainingTime = nextPrayerMoment.diff(now);
+  const duration = moment.duration(remainingTime);
+  const pad = (num) => String(Math.floor(num)).padStart(2, '0');
+  setCountdown(`${pad(duration.hours())}:${pad(duration.minutes())}:${pad(duration.seconds())}`);
 
-    let reaminingDuration = moment.duration(remainingTime);
-    console.log("duartion iss",reaminingDuration.hours(),reaminingDuration.minutes(),reaminingDuration.seconds());
-    setCountdown(
-      `${reaminingDuration.hours()}:${reaminingDuration.minutes()}:${reaminingDuration.seconds()}`
-    );
-    //handling the special case of fajr 
-    if (nextprayerObj.key==="Fajr" ){
-      const diffrenceTOmidnight=moment("23:59","HH:mm").diff(now);
-      const diffrenceFromMidnightToFajr=moment(nextPrayertime,"HH:mm").diff(moment("00:00","HH:mm"));
-      const TotalDifference=diffrenceTOmidnight+diffrenceFromMidnightToFajr;
-      reaminingDuration = moment.duration(TotalDifference);
-      
-    }
- 
-    
-  
-
-    
-  };
-
-
-  
-  
-
-
-
+  // Update states
+  setIndex(nextIndex);
+  setToday(now.format("MMM Do YYYY | h:mm"));
+};
   const handleChange = (event) => {
     const cityobj = availableCities.find(
       (city) => city.apiName === event.target.value
